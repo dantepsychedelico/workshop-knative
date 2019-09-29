@@ -94,6 +94,8 @@ istio-ingressgateway   LoadBalancer   10.0.13.242   35.221.191.47   15020:30799/
 
 ## Setting up a custom domain
 
+`{route}.{namespace}.{default-domain}`
+
 ### Change domain `example.com` to your custom domain
 Use `kubectl edit cm config-domain -n knative-serving` to remove `.metadata.annotations`
 
@@ -175,11 +177,23 @@ $ export PROJECT_ID=$(gcloud config get-value project)
 $ export REPO="gcr.io/$PROJECT_ID"
 ```
 
-### Use Docker to build your application containe
+### Use Docker to build your application container 
+
+[Ref](https://knative.dev/docs/serving/samples/rest-api-go/)
+[Ref](https://knative.dev/docs/serving/samples/traffic-splitting/)
 
 ```
 cd examples/rest-api-go/
 DOCKER_BUILDKIT=1 docker build -t $REPO/rest-api-go .
+```
+[stock.go](examples/rest-api-go/stock.go)
+[Dockerfile](examples/rest-api-go/Dockerfile)
+
+### Push image to Google Container Registry
+
+```
+gcloud auth configure-docker
+docker push ${REPO}/rest-api-go
 ```
 
 ### Replace sample.yaml with environment variable
@@ -187,8 +201,9 @@ DOCKER_BUILDKIT=1 docker build -t $REPO/rest-api-go .
 ```
 envsubst < sample-template.yaml > sample.yaml
 ```
+[sample-template.yaml](examples/rest-api-go/sample-template.yaml)
 
-### Deploy first app
+### Deploy app `stock-service-example`
 
 ```
 kubectl apply -f sample.yaml
@@ -197,5 +212,199 @@ kubectl apply -f sample.yaml
 ### Verify deployment
 
 ```
-curl -H 'Host: stock-service-example.default.example.com' http://$IP_ADDRESS
+kubectl get routes
+NAME                    URL                                                             READY     REASON
+helloworld-go           http://helloworld-go.default.knative.base1618-dev.com           True
+stock-service-example   http://stock-service-example.default.knative.base1618-dev.com   True
 ```
+
+[Link to stock-service-example](http://stock-service-example.default.knative.base1618-dev.com)
+
+### Using the `traffic:` block
+
+[examples/rest-api-go/release_sample.yaml](examples/rest-api-go/release_sample.yaml)
+```
+$ envsubst < release_sample-template.yaml > release_sample.yaml
+$ kubectl apply -f release_sample.yaml
+$ kubectl get ksvc stock-service-example --output yaml
+...
+  traffic:
+  - latestRevision: false
+    percent: 100
+    revisionName: stock-service-example-first
+    tag: current
+  - latestRevision: true
+    percent: 0
+    tag: latest
+status:
+  address:
+    url: http://stock-service-example.default.svc.cluster.local
+...
+  traffic:
+  - latestRevision: false
+    percent: 100
+    revisionName: stock-service-example-first
+    tag: current
+    url: http://current-stock-service-example.default.knative.base1618-dev.com
+  - latestRevision: true
+    percent: 0
+    revisionName: stock-service-example-first
+    tag: latest
+    url: http://latest-stock-service-example.default.knative.base1618-dev.com
+  url: http://stock-service-example.default.knative.base1618-dev.com
+```
+
+### Updating the Service
+[examples/rest-api-go/release_sample.yaml](examples/rest-api-go/release_sample.yaml)
+```
+$ envsubst < updated_sample-template.yaml > updated_sample.yaml
+$ kubectl apply -f updated_sample.yaml
+$ kubectl get ksvc stock-service-example --output yaml
+...
+spec:
+  template:
+    metadata:
+      creationTimestamp: null
+      name: stock-service-example-second
+    spec:
+      containerConcurrency: 0
+      containers:
+      - env:
+        - name: RESOURCE
+          value: share
+        image: gcr.io/zac-chung-dev/rest-api-go
+        name: user-container
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /
+            port: 0
+          periodSeconds: 3
+          successThreshold: 1
+          timeoutSeconds: 11
+        resources: {}
+      timeoutSeconds: 300
+  traffic:
+  - latestRevision: false
+    percent: 100
+    revisionName: stock-service-example-first
+    tag: current
+  - latestRevision: true
+    percent: 0
+    tag: latest
+status:
+  address:
+    url: http://stock-service-example.default.svc.cluster.local
+  conditions:
+  - lastTransitionTime: 2019-09-29T11:49:16Z
+    status: "True"
+    type: ConfigurationsReady
+  - lastTransitionTime: 2019-09-29T11:49:18Z
+    status: "True"
+    type: Ready
+  - lastTransitionTime: 2019-09-29T11:49:18Z
+    status: "True"
+    type: RoutesReady
+  latestCreatedRevisionName: stock-service-example-second
+  latestReadyRevisionName: stock-service-example-second
+  observedGeneration: 5
+  traffic:
+  - latestRevision: false
+    percent: 100
+    revisionName: stock-service-example-first
+    tag: current
+    url: http://current-stock-service-example.default.knative.base1618-dev.com
+  - latestRevision: true
+    percent: 0
+    revisionName: stock-service-example-second
+    tag: latest
+    url: http://latest-stock-service-example.default.knative.base1618-dev.com
+  url: http://stock-service-example.default.knative.base1618-dev.com
+```
+[http://current-stock-service-example.default.knative.base1618-dev.com](http://current-stock-service-example.default.knative.base1618-dev.com)
+[http://latest-stock-service-example.default.knative.base1618-dev.com](http://latest-stock-service-example.default.knative.base1618-dev.com)
+[http://stock-service-example.default.knative.base1618-dev.com](http://stock-service-example.default.knative.base1618-dev.com)
+
+### Traffic Splitting
+
+[examples/rest-api-go/split_sample.yaml](examples/rest-api-go/split_sample.yaml)
+
+```
+$ envsubst < split_sample-template.yaml > split_sample.yaml
+$ kubectl apply -f split_sample.yaml
+$ kubectl get ksvc stock-service-example --output yaml
+...
+spec:
+  template:
+    metadata:
+      creationTimestamp: null
+      name: stock-service-example-second
+    spec:
+      containerConcurrency: 0
+      containers:
+      - env:
+        - name: RESOURCE
+          value: share
+        image: gcr.io/zac-chung-dev/rest-api-go
+        name: user-container
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /
+            port: 0
+          periodSeconds: 3
+          successThreshold: 1
+          timeoutSeconds: 11
+        resources: {}
+      timeoutSeconds: 300
+  traffic:
+  - latestRevision: false
+    percent: 50
+    revisionName: stock-service-example-first
+    tag: current
+  - latestRevision: false
+    percent: 50
+    revisionName: stock-service-example-second
+    tag: candidate
+  - latestRevision: true
+    percent: 0
+    tag: latest
+status:
+  address:
+    url: http://stock-service-example.default.svc.cluster.local
+  conditions:
+  - lastTransitionTime: 2019-09-29T11:49:16Z
+    status: "True"
+    type: ConfigurationsReady
+  - lastTransitionTime: 2019-09-29T11:56:51Z
+    status: "True"
+    type: Ready
+  - lastTransitionTime: 2019-09-29T11:56:51Z
+    status: "True"
+    type: RoutesReady
+  latestCreatedRevisionName: stock-service-example-second
+  latestReadyRevisionName: stock-service-example-second
+  observedGeneration: 6
+  traffic:
+  - latestRevision: false
+    percent: 50
+    revisionName: stock-service-example-first
+    tag: current
+    url: http://current-stock-service-example.default.knative.base1618-dev.com
+  - latestRevision: false
+    percent: 50
+    revisionName: stock-service-example-second
+    tag: candidate
+    url: http://candidate-stock-service-example.default.knative.base1618-dev.com
+  - latestRevision: true
+    percent: 0
+    revisionName: stock-service-example-second
+    tag: latest
+    url: http://latest-stock-service-example.default.knative.base1618-dev.com
+  url: http://stock-service-example.default.knative.base1618-dev.com
+```
+
+[http://current-stock-service-example.default.knative.base1618-dev.com](http://current-stock-service-example.default.knative.base1618-dev.com)
+[http://candidate-stock-service-example.default.knative.base1618-dev.com](http://candidate-stock-service-example.default.knative.base1618-dev.com)
+[http://latest-stock-service-example.default.knative.base1618-dev.com](http://latest-stock-service-example.default.knative.base1618-dev.com)
+[http://stock-service-example.default.knative.base1618-dev.com](http://stock-service-example.default.knative.base1618-dev.com)
