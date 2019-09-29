@@ -31,11 +31,15 @@ kubectl create clusterrolebinding cluster-admin-binding \
 $ ./install-knative.sh
 ```
 
-### Deploying your app
+- [install-knative.sh](install-knative.sh)
+
+## Deploying your first app
 
 ```
 $ kubectl apply -f examples/helloworld-go/service.yaml
 ```
+
+- [service.yaml](examples/helloworld-go/service.yaml)
 
 ### Interacting with your app
 
@@ -58,6 +62,70 @@ Send request to your app.
 $ export IP_ADDRESS=$(kubectl get svc istio-ingressgateway -n istio-system -o 'jsonpath={.status.loadBalancer.ingress[0].ip}')
 $ curl -H 'Host: helloworld-go.default.example.com' http://$IP_ADDRESS
 ```
+
+## Assigning a static IP address for Knative on Kubernetes Engine
+
+[Ref](https://knative.dev/docs/serving/gke-assigning-static-ip-address/)
+
+### Reserve a static IP address
+
+```
+gcloud beta compute addresses create knative-workshop-istio-ingress-gw --region=asia-east1
+gcloud beta compute addresses list
+NAME                               ADDRESS/RANGE  TYPE      PURPOSE  NETWORK  REGION      SUBNET  STATUS
+knative-workshop-istio-ingress-gw  35.221.191.47  EXTERNAL                    asia-east1          RESERVED
+```
+
+### Update the external IP of istio-ingressgateway service
+
+```
+$ export RESERVED_IP=$(gcloud beta compute addresses list --filter="name=knative-workshop-istio-ingress-gw" --format=json | jq -r '.[0].address')
+$ kubectl patch svc istio-ingressgateway --namespace istio-system --patch '{"spec": { "loadBalancerIP": "'$RESERVED_IP'" }}'
+service/istio-ingressgateway patched
+```
+
+### Verify the static IP address of istio-ingressgateway service
+
+```
+kubectl get services -n istio-system istio-ingressgateway
+NAME                   TYPE           CLUSTER-IP    EXTERNAL-IP     PORT(S)                                                                                                                                      AGE
+istio-ingressgateway   LoadBalancer   10.0.13.242   35.221.191.47   15020:30799/TCP,80:31380/TCP,443:31390/TCP,31400:31400/TCP,15029:32158/TCP,15030:30313/TCP,15031:32453/TCP,15032:31927/TCP,15443:30171/TCP   41h
+```
+
+## Setting up a custom domain
+
+### Change domain `example.com` to your custom domain
+Use `kubectl edit cm config-domain -n knative-serving` to remove `.metadata.annotations`
+
+then apply `config-domain.yaml`
+
+```
+kubectl apply -f config-domain.yaml
+```
+[config-domain.yaml](config-domain.yaml)
+
+### Update your DNS records
+
+Create a Cloud DNS managed-zone
+
+```
+gcloud dns managed-zones create base1618-dev --dns-name=base1618-dev.com --description=''
+```
+
+Adding a recordset
+
+```
+gcloud dns record-sets transaction start --zone="base1618-dev"
+gcloud dns record-sets transaction add 35.221.191.47 --zone="base1618-dev" \
+--name="*.default.knative.base1618-dev.com." \
+--type="A" \
+--ttl=300
+gcloud dns record-sets transaction execute --zone="base1618-dev"
+```
+
+### Verify deployment
+
+[http://helloworld-go.default.knative.base1618-dev.com](http://helloworld-go.default.knative.base1618-dev.com)
 
 ## Accessing logs
 
@@ -130,14 +198,4 @@ kubectl apply -f sample.yaml
 
 ```
 curl -H 'Host: stock-service-example.default.example.com' http://$IP_ADDRESS
-```
-
-## Assigning a static IP address for Knative on Kubernetes Engine
-[Link](https://knative.dev/docs/serving/gke-assigning-static-ip-address/)
-
-```
-$ gcloud beta compute addresses create knative-workshop-istio-ingress-gw --region=asia-east1
-$ export RESERVED_IP=$(gcloud beta compute addresses list --filter="name=knative-workshop-istio-ingress-gw" --format=json | jq -r '.[0].address')
-$ kubectl patch svc istio-ingressgateway --namespace istio-system --patch '{"spec": { "loadBalancerIP": "'$RESERVED_IP'" }}'
-service/istio-ingressgateway patched
 ```
