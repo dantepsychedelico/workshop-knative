@@ -321,9 +321,10 @@ status:
     url: http://latest-stock-service-example.default.knative.base1618-dev.com
   url: http://stock-service-example.default.knative.base1618-dev.com
 ```
-[http://current-stock-service-example.default.knative.base1618-dev.com](http://current-stock-service-example.default.knative.base1618-dev.com)
-[http://latest-stock-service-example.default.knative.base1618-dev.com](http://latest-stock-service-example.default.knative.base1618-dev.com)
-[http://stock-service-example.default.knative.base1618-dev.com](http://stock-service-example.default.knative.base1618-dev.com)
+
+- [http://current-stock-service-example.default.knative.base1618-dev.com](http://current-stock-service-example.default.knative.base1618-dev.com)
+- [http://latest-stock-service-example.default.knative.base1618-dev.com](http://latest-stock-service-example.default.knative.base1618-dev.com)
+- [http://stock-service-example.default.knative.base1618-dev.com](http://stock-service-example.default.knative.base1618-dev.com)
 
 ### Traffic Splitting
 
@@ -404,7 +405,7 @@ status:
   url: http://stock-service-example.default.knative.base1618-dev.com
 ```
 
-[http://current-stock-service-example.default.knative.base1618-dev.com](http://current-stock-service-example.default.knative.base1618-dev.com)
-[http://candidate-stock-service-example.default.knative.base1618-dev.com](http://candidate-stock-service-example.default.knative.base1618-dev.com)
-[http://latest-stock-service-example.default.knative.base1618-dev.com](http://latest-stock-service-example.default.knative.base1618-dev.com)
-[http://stock-service-example.default.knative.base1618-dev.com](http://stock-service-example.default.knative.base1618-dev.com)
+- [http://current-stock-service-example.default.knative.base1618-dev.com](http://current-stock-service-example.default.knative.base1618-dev.com)
+- [http://candidate-stock-service-example.default.knative.base1618-dev.com](http://candidate-stock-service-example.default.knative.base1618-dev.com)
+- [http://latest-stock-service-example.default.knative.base1618-dev.com](http://latest-stock-service-example.default.knative.base1618-dev.com)
+- [http://stock-service-example.default.knative.base1618-dev.com](http://stock-service-example.default.knative.base1618-dev.com)
