@@ -1,19 +1,33 @@
 # Knative WorkShop
 
-## Create GKE Cluster
+## Set up environment
+
+### Create GKE Cluster
 
 [Link](https://knative.dev/docs/install/knative-with-gke/)
 ```
 $ ./setup-gke-cluster.sh
 ```
+```
+gcloud beta container clusters create workshop-knative \
+    --addons=HorizontalPodAutoscaling,HttpLoadBalancing,Istio \
+    --machine-type=n1-standard-4 \
+    --cluster-version=latest --zone=asia-east1-a \
+    --enable-stackdriver-kubernetes --enable-ip-alias \
+    --enable-autoscaling --min-nodes=1 --max-nodes=5 \
+    --enable-autorepair \
+    --preemptible \
+    --num-nodes=1 \
+    --scopes cloud-platform
+```
 
-## Get authentication credentials for the cluster
+### Get authentication credentials for the cluster
 
 ```
 gcloud container clusters get-credentials workshop-knative
 ```
 
-## Grant cluster-admin permissions to the current user
+### Grant cluster-admin permissions to the current user
 
 ```
 kubectl create clusterrolebinding cluster-admin-binding \
@@ -21,13 +35,13 @@ kubectl create clusterrolebinding cluster-admin-binding \
     --user=$(gcloud config get-value core/account)
 ```
 
-## Install Knative
+### Install Knative
 
 ```
 $ ./install-knative.sh
 ```
 
-## Deploying your app
+### Deploying your app
 
 ```
 $ kubectl apply -f examples/helloworld-go/service.yaml
