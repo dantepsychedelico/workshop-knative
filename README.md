@@ -8,7 +8,7 @@
 $ ./setup-gke-cluster.sh
 ```
 
-- [Ref](https://knative.dev/docs/install/knative-with-gke/)
+- [Install on Google Kubernetes Engine](https://knative.dev/docs/install/knative-with-gke/)
 - [setup-gke-cluster.sh](setup-gke-cluster.sh)
 
 ### Get authentication credentials for the cluster
@@ -65,7 +65,7 @@ $ curl -H 'Host: helloworld-go.default.example.com' http://$IP_ADDRESS
 
 ## Assigning a static IP address for Knative on Kubernetes Engine
 
-[Ref](https://knative.dev/docs/serving/gke-assigning-static-ip-address/)
+[Assigning a static IP address for Knative on Kubernetes Engine](https://knative.dev/docs/serving/gke-assigning-static-ip-address/)
 
 ### Reserve a static IP address
 
@@ -179,15 +179,15 @@ $ export REPO="gcr.io/$PROJECT_ID"
 
 ### Use Docker to build your application container 
 
-[Ref](https://knative.dev/docs/serving/samples/rest-api-go/)
-[Ref](https://knative.dev/docs/serving/samples/traffic-splitting/)
+- [Creating a RESTful Service - Go](https://knative.dev/docs/serving/samples/rest-api-go/)
+- [Simple Traffic Splitting Between Revisions](https://knative.dev/docs/serving/samples/traffic-splitting/)
 
 ```
 cd examples/rest-api-go/
 DOCKER_BUILDKIT=1 docker build -t $REPO/rest-api-go .
 ```
-[stock.go](examples/rest-api-go/stock.go)
-[Dockerfile](examples/rest-api-go/Dockerfile)
+- [stock.go](examples/rest-api-go/stock.go)
+- [Dockerfile](examples/rest-api-go/Dockerfile)
 
 ### Push image to Google Container Registry
 
@@ -218,7 +218,7 @@ helloworld-go           http://helloworld-go.default.knative.base1618-dev.com   
 stock-service-example   http://stock-service-example.default.knative.base1618-dev.com   True
 ```
 
-[Link to stock-service-example](http://stock-service-example.default.knative.base1618-dev.com)
+[http://stock-service-example.default.knative.base1618-dev.com](http://stock-service-example.default.knative.base1618-dev.com)
 
 ### Using the `traffic:` block
 
