@@ -1,1 +1,5 @@
 google-cloud-container==0.3.0
+pydash==4.7.5
+google-api-python-client==1.7.11
+Flask==1.0.2
+gunicorn==19.9.0

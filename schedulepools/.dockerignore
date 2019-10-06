@@ -47,7 +47,6 @@ htmlcov/
 nosetests.xml
 coverage.xml
 *.cover
-*.py,cover
 .hypothesis/
 .pytest_cache/
 
@@ -124,4 +123,8 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# service account's key
 google-sa-key.json
+
+# Another ignore
+Dockerfile
